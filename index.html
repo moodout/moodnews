@@ -16,6 +16,10 @@
             font-weight: bold;
             margin-top: 20px;
             color: #007bff;
+            cursor: pointer;
+        }
+        .header-title:hover {
+            text-decoration: underline;
         }
         .marquee-container {
             background-color: #007bff;
@@ -37,30 +41,27 @@
             object-fit: cover;
             background: #ddd;
         }
-        /* تخصيص شريط حقوق الملكية في الأسفل */
         footer {
             background-color: #343a40;
             color: white;
             text-align: center;
             padding: 10px;
-            position: relative;
         }
     </style>
 </head>
 <body>
 
-    <!-- عنوان الصفحة -->
     <div class="container">
-        <h1 class="header-title">📰 أحدث الأخبار</h1>
+        <h1 class="header-title">
+            <a href="#" onclick="window.location.href = window.location.href;" class="header-title">📰 أحدث الأخبار</a>
+        </h1>
     </div>
 
-    <!-- شريط الأخبار المتحرك -->
     <div class="marquee-container">
         <marquee id="newsTicker" direction="left">تحميل آخر الأخبار...</marquee>
     </div>
 
     <div class="container mt-4">
-        <!-- زر تغيير اللغة -->
         <div class="d-flex justify-content-end mb-3">
             <select id="languageSelect" class="form-select w-auto">
                 <option value="ar">العربية</option>
@@ -72,50 +73,46 @@
             </select>
         </div>
 
-        <!-- مربع البحث -->
-        <input type="text" id="searchInput" class="form-control mb-3" placeholder="ابحث عن الأخبار...">
-
-        <!-- قائمة الأخبار -->
-        <div id="newsContainer" class="row row-cols-1 row-cols-md-2 g-4"></div>
-
-        <!-- زر تحميل المزيد -->
-        <div class="text-center mt-4">
-            <button id="loadMoreBtn" class="btn btn-primary">تحميل المزيد</button>
+        <!-- شريط البحث مع زر البحث -->
+        <div class="input-group mb-3">
+            <input type="text" id="searchInput" class="form-control" placeholder="ابحث عن الأخبار..." aria-label="ابحث عن الأخبار">
+            <button class="btn btn-primary" id="searchBtn">بحث</button>
         </div>
+
+        <div id="newsContainer" class="row row-cols-1 row-cols-md-2 g-4"></div>
     </div>
 
     <script>
         document.addEventListener("DOMContentLoaded", function () {
             const newsContainer = document.getElementById("newsContainer");
-            const loadMoreBtn = document.getElementById("loadMoreBtn");
             const searchInput = document.getElementById("searchInput");
+            const searchBtn = document.getElementById("searchBtn");
             const newsTicker = document.getElementById("newsTicker");
             const languageSelect = document.getElementById("languageSelect");
 
             let newsData = [];
             let currentPage = 1;
             const newsPerPage = 4;
-            const API_KEY = "NkwusezCRv-NB9S5PnWZVU5J0_7u8aLgMlu-Txhd5nVRBuTA"; 
+            const API_KEY = "myIFT6F6Iy5G6WPxz2zhdU9HIW6oho0qXWjmBG6-jWHrOfUP"; // تم إضافة الـ API هنا
 
+            // تحميل الأخبار تلقائيا عند فتح الصفحة
             fetchNews();
             fetchNewsTicker();
 
-            loadMoreBtn.addEventListener("click", () => {
-                currentPage++;
-                displayNews();
-            });
-
-            searchInput.addEventListener("input", (e) => {
-                const query = e.target.value.toLowerCase();
-                const filteredNews = newsData.filter(item => item.title.toLowerCase().includes(query));
-                renderNews(filteredNews);
-            });
-
+            // عند تغيير اللغة
             languageSelect.addEventListener("change", () => {
                 fetchNews();
                 fetchNewsTicker();
             });
 
+            // عند الضغط على زر البحث
+            searchBtn.addEventListener("click", () => {
+                const query = searchInput.value.toLowerCase();
+                const filteredNews = newsData.filter(item => item.title.toLowerCase().includes(query));
+                renderNews(filteredNews);
+            });
+
+            // دالة لجلب الأخبار
             function fetchNews() {
                 const lang = languageSelect.value;
                 const apiUrl = `https://api.currentsapi.services/v1/latest-news?language=${lang}&apiKey=${API_KEY}`;
@@ -123,15 +120,14 @@
                 fetch(apiUrl)
                     .then(response => response.json())
                     .then(data => {
-                        // تصفية الأخبار للتأكد من وجود العنوان والرابط
-                        newsData = data.news.filter(news => news.title && news.url); 
-                        console.log("الأخبار المستلمة:", newsData); 
+                        newsData = data.news.filter(news => news.title && news.url);
                         currentPage = 1;
-                        displayNews();
+                        renderNews(newsData);
                     })
                     .catch(error => console.error("Error fetching news:", error));
             }
 
+            // دالة لجلب الأخبار لشريط العناوين
             function fetchNewsTicker() {
                 const lang = languageSelect.value;
                 const apiUrl = `https://api.currentsapi.services/v1/latest-news?language=${lang}&apiKey=${API_KEY}`;
@@ -145,35 +141,19 @@
                     .catch(error => console.error("Error fetching news ticker:", error));
             }
 
-            function displayNews() {
-                const start = (currentPage - 1) * newsPerPage;
-                const end = start + newsPerPage;
-                const newsSlice = newsData.slice(start, end);
-                renderNews(newsSlice, start === 0);
-            }
-
-            function renderNews(newsArray, clear = false) {
-                if (clear) newsContainer.innerHTML = "";
-
-                let validNewsCount = 0;
+            // دالة لعرض الأخبار
+            function renderNews(newsArray) {
+                newsContainer.innerHTML = ''; // تنظيف الأخبار السابقة
 
                 newsArray.forEach((news, index) => {
-                    if (!news.title || !news.url) return; 
-
-                    let adHtml = "";
-                    if (validNewsCount > 0 && validNewsCount % 3 === 0) { 
-                        adHtml = `<div class="col-12 text-center my-3">
-                                    <img src="https://via.placeholder.com/728x90?text=إعلان+إلكتروني" class="img-fluid">
-                                  </div>`;
-                        newsContainer.innerHTML += adHtml;
-                    }
+                    if (!news.title || !news.url) return;
 
                     const imageUrl = news.image && news.image !== "None" ? news.image : "https://via.placeholder.com/400x200?text=No+Image";
 
                     const newsHtml = `
                         <div class="col">
                             <div class="card news-card">
-                                <img data-src="${imageUrl}" class="card-img-top lazy-img" alt="${news.title}">
+                                <img src="${imageUrl}" class="card-img-top lazy-img" alt="${news.title}">
                                 <div class="card-body">
                                     <h5 class="card-title">${news.title}</h5>
                                     <p class="card-text">${news.description || "لا يوجد وصف متاح"}</p>
@@ -183,21 +163,16 @@
                         </div>`;
 
                     newsContainer.innerHTML += newsHtml;
-                    validNewsCount++; 
-                });
-
-                lazyLoadImages();
-            }
-
-            function lazyLoadImages() {
-                const lazyImages = document.querySelectorAll(".lazy-img");
-                lazyImages.forEach(img => {
-                    if (!img.dataset.loaded) {
-                        img.src = img.dataset.src;
-                        img.dataset.loaded = true;
-                    }
                 });
             }
+
+            // مراقب للتمرير اللانهائي
+            window.addEventListener('scroll', () => {
+                if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 100) {
+                    currentPage++;
+                    renderNews(newsData.slice(0, currentPage * newsPerPage));
+                }
+            });
         });
     </script>
 
@@ -205,7 +180,6 @@
     <!-- إضافة كود الإعلانات -->
     <script type='text/javascript' src='//pl25729433.profitablecpmrate.com/43/bd/fc/43bdfc82ee8e6bcd559f7da9d1ca2dc2.js'></script>
 
-    <!-- حقوق الملكية في أسفل الصفحة -->
     <footer>
         <p>© 2025 .جميع الحقوق محفوظة</p>
     </footer>
